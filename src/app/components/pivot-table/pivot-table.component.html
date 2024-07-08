@@ -1,0 +1,28 @@
+<table>
+  <thead>
+  <tr>
+    <th rowspan="3" *ngFor="let linha of linhas">{{ linha }}</th>
+    <th [attr.colspan]="colunasUnicas.length * medidas.length">{{ colunas.join(' - ') }}</th>
+  </tr>
+  <tr>
+    <ng-container *ngFor="let coluna of colunasUnicas">
+      <th [attr.colspan]="medidas.length">{{ coluna }}</th>
+    </ng-container>
+  </tr>
+  <tr>
+    <ng-container *ngFor="let coluna of colunasUnicas">
+      <th *ngFor="let medida of medidas">{{ medida.nome }}</th>
+    </ng-container>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let linha of dadosDinamicos">
+    <td *ngFor="let chave of linha.chaveLinha.split('-')">{{ chave }}</td>
+    <ng-container *ngFor="let coluna of colunasUnicas">
+      <ng-container *ngFor="let medida of medidas">
+        <td>{{ linha.colunas[coluna]?.[medida.campo]?.[medida.tipo] || 0 }}</td>
+      </ng-container>
+    </ng-container>
+  </tr>
+  </tbody>
+</table>

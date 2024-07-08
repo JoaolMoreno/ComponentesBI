@@ -1,0 +1,39 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  margin-bottom: 20px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  text-transform: capitalize; /* Transforma a primeira letra em maiúscula */
+}
+
+th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+td {
+  vertical-align: top;
+}
+
+thead tr:nth-child(1) th {
+  border-bottom: none;
+}
+
+thead tr:nth-child(2) th {
+  border-top: none;
+  background-color: #66BB6A;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+tbody tr:hover {
+  background-color: #f1f1f1;
+}
