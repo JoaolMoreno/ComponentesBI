@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectionStrategy, OnChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 interface Medida {
@@ -7,13 +7,26 @@ interface Medida {
   nome: string;
 }
 
+interface DadosMedida {
+  value: number; // Valor agregado para a medida
+  count?: number; // Contagem para cálculo de médias
+}
+
+interface ColunaResultados {
+  [medidaNome: string]: DadosMedida; // Medidas como propriedades
+}
+
+interface LinhaResultados {
+  chaveLinha: string;
+  colunas: { [chaveColuna: string]: ColunaResultados }; // Ajuste para incluir chaveColuna
+}
+
 @Component({
   selector: 'app-pivot-table',
-  standalone: true,
-  imports: [CommonModule],
   templateUrl: './pivot-table.component.html',
   styleUrls: ['./pivot-table.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  standalone: true,
+  imports: [CommonModule]
 })
 export class PivotTableComponent implements OnInit, OnChanges {
   @Input() dados: any[] = [];
@@ -21,106 +34,109 @@ export class PivotTableComponent implements OnInit, OnChanges {
   @Input() colunas: string[] = [];
   @Input() medidas: Medida[] = [];
 
-  dadosDinamicos: any[] = [];
-  colunasUnicas: string[] = [];
+  dadosDinamicos: LinhaResultados[] = [];
+  valoresColunas: string[] = []; // Armazena os valores únicos das colunas
 
   ngOnInit() {
     this.gerarDadosDinamicos();
+    this.valoresColunas = this.getValoresColunas(); // Obtenha os valores únicos das colunas
   }
 
-  ngOnChanges() {
-    this.gerarDadosDinamicos();
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['dados'] || changes['linhas'] || changes['colunas'] || changes['medidas']) {
+      this.gerarDadosDinamicos();
+      this.valoresColunas = this.getValoresColunas();
+    }
   }
 
   gerarDadosDinamicos() {
-    const dadosDinamicos: any = {};
-    const colunasUnicasSet = new Set<string>();
+    const resultado: { [key: string]: { [key: string]: ColunaResultados } } = {};
 
     this.dados.forEach(item => {
-      const chaveLinha = this.linhas.map(linha => item[linha]).join('-');
-      const chaveColuna = this.colunas.map(coluna => item[coluna]).join('-');
-
-      colunasUnicasSet.add(chaveColuna);
-
-      if (!dadosDinamicos[chaveLinha]) {
-        dadosDinamicos[chaveLinha] = { colunas: {} };
-      }
-
-      if (!dadosDinamicos[chaveLinha].colunas[chaveColuna]) {
-        dadosDinamicos[chaveLinha].colunas[chaveColuna] = {};
-        this.medidas.forEach(medida => {
-          dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo] = {
-            count: 0,
-            sum: 0,
-            min: Infinity,
-            max: -Infinity,
-            avg: 0
-          };
-        });
-      }
+      const chaveLinha = this.linhas.map(linha => item[linha]).join(' | ');
+      const chaveColuna = this.colunas.map(coluna => item[coluna]).join(' | ');
 
       this.medidas.forEach(medida => {
+        if (!resultado[chaveLinha]) {
+          resultado[chaveLinha] = {};
+        }
+
+        if (!resultado[chaveLinha][chaveColuna]) {
+          resultado[chaveLinha][chaveColuna] = {};
+        }
+
+        const medidaKey = medida.nome;
         const valor = item[medida.campo];
+        const dadosMedida = resultado[chaveLinha][chaveColuna][medidaKey] || (resultado[chaveLinha][chaveColuna][medidaKey] = { value: 0, count: 0 });
+
         switch (medida.tipo) {
-          case 'count':
-            dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].count += 1;
-            break;
           case 'sum':
-            dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].sum += valor;
+            dadosMedida.value += valor;
             break;
           case 'avg':
-            dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].sum += valor;
-            dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].count += 1;
+            dadosMedida.value += valor;
+            dadosMedida.count!++;
             break;
           case 'min':
-            if (valor < dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].min) {
-              dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].min = valor;
-            }
+            dadosMedida.value = dadosMedida.value ? Math.min(dadosMedida.value, valor) : valor;
             break;
           case 'max':
-            if (valor > dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].max) {
-              dadosDinamicos[chaveLinha].colunas[chaveColuna][medida.campo].max = valor;
-            }
+            dadosMedida.value = Math.max(dadosMedida.value, valor);
+            break;
+          case 'count':
+            dadosMedida.value++;
             break;
         }
       });
     });
 
-    this.colunasUnicas = Array.from(colunasUnicasSet);
+    this.dadosDinamicos = Object.keys(resultado).map(chaveLinha => {
+      const colunas = resultado[chaveLinha];
 
-    // Calcula a média após todos os dados serem agregados
-    this.dadosDinamicos = Object.keys(dadosDinamicos).map(chaveLinha => {
-      const linha = dadosDinamicos[chaveLinha];
-      Object.keys(linha.colunas).forEach(chaveColuna => {
-        this.medidas.forEach(medida => {
-          if (medida.tipo === 'avg') {
-            const dadosCampo = linha.colunas[chaveColuna][medida.campo];
-            dadosCampo.avg = dadosCampo.sum / dadosCampo.count;
-          }
-        });
-      });
-      return {
-        chaveLinha,
-        colunas: linha.colunas
-      };
-    });
-
-    // Garante que todas as combinações de chaveLinha e colunasUnicas estejam presentes
-    this.dadosDinamicos.forEach(linha => {
-      this.colunasUnicas.forEach(chaveColuna => {
-        if (!linha.colunas[chaveColuna]) {
-          linha.colunas[chaveColuna] = {};
+      // Adicionar colunas vazias para valores de colunas ausentes
+      this.valoresColunas.forEach(valorColuna => {
+        if (!colunas[valorColuna]) {
+          colunas[valorColuna] = {};
           this.medidas.forEach(medida => {
-            linha.colunas[chaveColuna][medida.campo] = {
-              count: 0,
-              sum: 0,
-              min: 0,
-              max: 0,
-              avg: 0
-            };
+            colunas[valorColuna][medida.nome] = { value: 0, count: 0 };
           });
         }
       });
+
+      return {
+        chaveLinha,
+        colunas
+      };
     });
+  }
+
+  getColunas(dado: LinhaResultados): string[] {
+    return Object.keys(dado.colunas);
+  }
+
+  getValoresColunas(): string[] {
+    const valores: Set<string> = new Set();
+
+    this.dados.forEach(item => {
+      const valorColuna = this.colunas.map(coluna => item[coluna]).join(' | ');
+      valores.add(valorColuna);
+    });
+
+    return Array.from(valores);
+  }
+
+  getMedidaValor(dado: LinhaResultados, valorColuna: string, medida: Medida): number {
+    const coluna = dado.colunas[valorColuna];
+    if (!coluna) {
+      return 0;
+    }
+    const dadosMedida = coluna[medida.nome];
+    if (!dadosMedida) {
+      return 0;
+    }
+    if (medida.tipo === 'avg') {
+      return dadosMedida.count! > 0 ? dadosMedida.value / dadosMedida.count! : 0;
+    }
+    return dadosMedida.value;
   }
 }

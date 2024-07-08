@@ -20,18 +20,18 @@ interface Medida {
 export class AppComponent implements OnInit {
   titulo = 'ComponentesBI';
   dados = [
-    { categoria: 'Eletrônicos', regiao: 'Norte', vendas: 100 },
-    { categoria: 'Eletrônicos', regiao: 'Sul', vendas: 150 },
-    { categoria: 'Eletrônicos', regiao: 'Leste', vendas: 5 },
-    { categoria: 'Roupas', regiao: 'Norte', vendas: 200 },
-    { categoria: 'Roupas', regiao: 'Sul', vendas: 250 },
-    { categoria: 'Eletrônicos', regiao: 'Norte', vendas: 300 },
-    { categoria: 'Eletrônicos', regiao: 'Sul', vendas: 350 },
-    { categoria: 'Roupas', regiao: 'Norte', vendas: 400 },
-    { categoria: 'Roupas', regiao: 'Sul', vendas: 450 },
-    { categoria: 'Bicicletas', regiao: 'Norte', vendas: 500 },
-    { categoria: 'Bicicletas', regiao: 'Sul', vendas: 50 },
-    { categoria: 'Bicicletas', regiao: 'Leste', vendas: 25 },
+    { categoria: 'Eletrônicos', regiao: 'Norte', vendas: 100, ano: 2022 },
+    { categoria: 'Eletrônicos', regiao: 'Sul', vendas: 150, ano: 2022 },
+    { categoria: 'Eletrônicos', regiao: 'Leste', vendas: 5, ano: 2022 },
+    { categoria: 'Roupas', regiao: 'Norte', vendas: 200, ano: 2022 },
+    { categoria: 'Roupas', regiao: 'Sul', vendas: 250, ano: 2022 },
+    { categoria: 'Eletrônicos', regiao: 'Norte', vendas: 300, ano: 2023 },
+    { categoria: 'Eletrônicos', regiao: 'Sul', vendas: 350, ano: 2023 },
+    { categoria: 'Roupas', regiao: 'Norte', vendas: 400, ano: 2023 },
+    { categoria: 'Roupas', regiao: 'Sul', vendas: 450, ano: 2023 },
+    { categoria: 'Bicicletas', regiao: 'Norte', vendas: 500, ano: 2023 },
+    { categoria: 'Bicicletas', regiao: 'Sul', vendas: 50, ano: 2023 },
+    { categoria: 'Bicicletas', regiao: 'Leste', vendas: 25, ano: 2023 },
   ];
 
   categoriasUnicas: string[] = [];
@@ -49,9 +49,9 @@ export class AppComponent implements OnInit {
     { campo: 'vendas', tipo: 'count', nome: 'Contagem de Vendas' }
   ];
 
-  dimensoes: string[] = ['categoria', 'regiao'];
+  dimensoes: string[] = ['categoria', 'regiao', 'ano'];
   linhasSelecionadas: string[] = ['categoria'];
-  colunasSelecionadas: string[] = ['regiao'];
+  colunasSelecionadas: string[] = ['ano'];
   medidasSelecionadas: Medida[] = [...this.medidas];
 
   ngOnInit() {
