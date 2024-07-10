@@ -3,6 +3,8 @@ import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PivotTableComponent } from './components/pivot-table/pivot-table.component';
+import { HttpClientModule, HttpClient } from '@angular/common/http'; // Importa o HttpClientModule
+import { Papa } from 'ngx-papaparse';
 
 interface Medida {
   campo: string;
@@ -13,27 +15,14 @@ interface Medida {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, PivotTableComponent, CommonModule, FormsModule],
+  imports: [RouterOutlet, PivotTableComponent, CommonModule, FormsModule, HttpClientModule], // Adiciona o HttpClientModule aqui
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  providers: [Papa]
 })
 export class AppComponent implements OnInit {
   titulo = 'ComponentesBI';
-  dados = [
-    { categoria: 'Eletrônicos', regiao: 'Norte', vendas: 100, ano: 2022 },
-    { categoria: 'Eletrônicos', regiao: 'Sul', vendas: 150, ano: 2022 },
-    { categoria: 'Eletrônicos', regiao: 'Leste', vendas: 5, ano: 2022 },
-    { categoria: 'Roupas', regiao: 'Norte', vendas: 200, ano: 2022 },
-    { categoria: 'Roupas', regiao: 'Sul', vendas: 250, ano: 2022 },
-    { categoria: 'Eletrônicos', regiao: 'Norte', vendas: 300, ano: 2023 },
-    { categoria: 'Eletrônicos', regiao: 'Sul', vendas: 350, ano: 2023 },
-    { categoria: 'Roupas', regiao: 'Norte', vendas: 400, ano: 2023 },
-    { categoria: 'Roupas', regiao: 'Sul', vendas: 450, ano: 2023 },
-    { categoria: 'Bicicletas', regiao: 'Norte', vendas: 500, ano: 2023 },
-    { categoria: 'Bicicletas', regiao: 'Sul', vendas: 50, ano: 2023 },
-    { categoria: 'Bicicletas', regiao: 'Leste', vendas: 25, ano: 2023 },
-  ];
-
+  dados: any[] = [];
   categoriasUnicas: string[] = [];
   regioesUnicas: string[] = [];
   dadosFiltrados = this.dados;
@@ -42,28 +31,39 @@ export class AppComponent implements OnInit {
   regiaoSelecionada = '';
 
   medidas: Medida[] = [
-    { campo: 'vendas', tipo: 'sum', nome: 'Total de Vendas' },
-    { campo: 'vendas', tipo: 'avg', nome: 'Média de Vendas' },
-    { campo: 'vendas', tipo: 'min', nome: 'Mínimo de Vendas' },
-    { campo: 'vendas', tipo: 'max', nome: 'Máximo de Vendas' },
-    { campo: 'vendas', tipo: 'count', nome: 'Contagem de Vendas' }
+    { campo: 'IDCHAPA', tipo: 'count', nome: 'Funcionarios' }
   ];
 
-  dimensoes: string[] = ['categoria', 'regiao', 'ano'];
-  linhasSelecionadas: string[] = ['categoria'];
-  colunasSelecionadas: string[] = ['ano'];
+  dimensoes: string[] = ['REGIAO', 'UNIDADE', 'SECAO', 'EMPRESA', 'NOME', 'SITUACAO','CARGO','FUNCAO'];
+  linhasSelecionadas: string[] = ['REGIAO', 'UNIDADE', 'SECAO', 'EMPRESA', 'NOME', 'SITUACAO','CARGO','FUNCAO'];
+  colunasSelecionadas: string[] = [];
   medidasSelecionadas: Medida[] = [...this.medidas];
 
+  constructor(private http: HttpClient, private papa: Papa) {}
+
   ngOnInit() {
-    this.categoriasUnicas = Array.from(new Set(this.dados.map(item => item.categoria)));
-    this.regioesUnicas = Array.from(new Set(this.dados.map(item => item.regiao)));
-    this.aplicarFiltros();
+    this.loadCSV();
+  }
+
+  loadCSV() {
+    this.http.get('/Funcionarios.csv', { responseType: 'text' })
+      .subscribe(data => {
+        this.papa.parse(data, {
+          header: true,
+          complete: (result) => {
+            this.dados = result.data;
+            this.categoriasUnicas = Array.from(new Set(this.dados.map(item => item.REGIAO)));
+            this.regioesUnicas = Array.from(new Set(this.dados.map(item => item.UNIDADE)));
+            this.aplicarFiltros();
+          }
+        });
+      });
   }
 
   aplicarFiltros() {
     this.dadosFiltrados = this.dados.filter(item => {
-      return (this.categoriaSelecionada === '' || item.categoria === this.categoriaSelecionada) &&
-        (this.regiaoSelecionada === '' || item.regiao === this.regiaoSelecionada);
+      return (this.categoriaSelecionada === '' || item.REGIAO === this.categoriaSelecionada) &&
+        (this.regiaoSelecionada === '' || item.UNIDADE === this.regiaoSelecionada);
     });
   }
 

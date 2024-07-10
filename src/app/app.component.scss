@@ -9,14 +9,17 @@ body {
 .container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: space-evenly;
   margin: 20px;
+  gap: 10px;
 }
 
 .filters {
   flex: 1;
   min-width: 200px;
   margin-bottom: 20px;
+  justify-content: space-evenly;
+  gap: 10px;
 }
 
 .filter-group {
